@@ -20,7 +20,7 @@ dotenv.config();
 // Allowed origins for CORS
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://partypalace-frontend.vercel.app",
+  "https://partypalace.vercel.app",
 ];
 
 // Middleware
