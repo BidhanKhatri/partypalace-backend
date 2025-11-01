@@ -124,10 +124,16 @@ export const loginGoogleController = async (req, res) => {
     const { code } = req.query;
     console.log("🔹 Google auth code:", code);
 
+    // Choose redirect URI based on environment
+    const redirectUri =
+      process.env.NODE_ENV === "production"
+        ? process.env.GOOGLE_REDIRECT_URI_PROD
+        : process.env.GOOGLE_REDIRECT_URI_DEV;
+
     // Exchange code for tokens
     const { tokens } = await oauth2Client.getToken({
       code,
-      redirect_uri: "http://localhost:5173",
+      redirect_uri: redirectUri,
     });
 
     console.log("🔹 Google tokens received:", tokens);
@@ -183,6 +189,7 @@ export const loginGoogleController = async (req, res) => {
     });
   }
 };
+
 //logout
 export const logoutController = async (req, res) => {
   try {
