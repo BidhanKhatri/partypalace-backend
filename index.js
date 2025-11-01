@@ -15,22 +15,37 @@ import { app, server } from "./utils/socketConn.js";
 import reviewRouter from "./routes/review.route.js";
 import cameraManRouter from "./routes/cameraman.route.js";
 
-// const app = express();
 dotenv.config();
 
-//middleware
+// Allowed origins for CORS
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://partypalace-frontend.vercel.app",
+];
+
+// Middleware
 app.use(express.json());
 app.use("/images", express.static("public/images"));
 app.use(cookieParser());
+
+// Dynamic CORS setup
 app.use(
   cors({
-    origin: ["https://partypalace-frontend.vercel.app", "http://localhost:5173"],
+    origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg = `CORS policy: origin ${origin} not allowed`;
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   })
 );
 
-//routes
+// Routes
 app.use("/api/user", userRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/partypalace", partyPalaceRouter);
@@ -42,8 +57,8 @@ app.use("/api/global", globalRouter);
 app.use("/api/review", reviewRouter);
 app.use("/api/cameraman", cameraManRouter);
 
+// Start server
 const PORT = process.env.PORT || 4444;
-
 server.listen(PORT, () => {
   connectDB();
   console.log(`Server is running on port ${PORT}`);
