@@ -4,17 +4,107 @@ import uploadImageCloudinary from "../utils/uploadImageCloud.js";
 import { io } from "../utils/socketConn.js";
 
 //create a party palace controller
+// export const createPartyPalaceController = async (req, res) => {
+//   try {
+//     const { name, description, location, capacity, pricePerHour, category } =
+//       req.body;
+//     const userId = req.userId; // middleware bata lini
+//     const userRole = req.userRole; // middleware bata lini
+
+//     const comingImg = req.files;
+//     // console.log(comingImg);
+
+//     if (comingImg.length === 0) {
+//       return res.status(400).json({
+//         msg: "At least one image is required",
+//         success: false,
+//         error: true,
+//       });
+//     }
+
+//     if (userRole !== "admin") {
+//       return res.status(401).json({
+//         msg: "only admin can create party palace",
+//         success: false,
+//         error: true,
+//       });
+//     }
+
+//     if (
+//       !name ||
+//       !description ||
+//       !location ||
+//       !capacity ||
+//       !pricePerHour ||
+//       !category
+//     ) {
+//       return res.status(400).json({
+//         msg: "All fields are required",
+//         success: false,
+//         error: true,
+//       });
+//     }
+
+//     const uploadRes = await Promise.all(
+//       comingImg.map((f) => uploadImageCloudinary(f))
+//     );
+
+//     const imageUrls = uploadRes.map((f) => f.url);
+
+//     let categoriesArray = category;
+
+// if (typeof categoriesArray === "string") {
+//   categoriesArray = JSON.parse(categoriesArray);
+// }
+
+//     const createPartyPalace = new PartyPalace({
+//       name,
+//       description,
+//       location,
+//       capacity,
+//       pricePerHour,
+//       category: categoriesArray,
+//       createdBy: userId,
+//       images: imageUrls,
+//     });
+//     await createPartyPalace.save();
+
+//     //socket logic for real time update
+//     io.emit("createdPartyPalace", createPartyPalace);
+
+//     return res.status(200).json({
+//       msg: "party palace created successfully",
+//       data: createPartyPalace,
+//       success: true,
+//       error: false,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       msg: error.message || error.msg || "Internal server error",
+//       success: false,
+//       error: true,
+//     });
+//   }
+// };
+
 export const createPartyPalaceController = async (req, res) => {
   try {
-    const { name, description, location, capacity, pricePerHour, category } =
-      req.body;
-    const userId = req.userId; // middleware bata lini
-    const userRole = req.userRole; // middleware bata lini
+    const {
+      name,
+      description,
+      location,
+      capacity,
+      pricePerHour,
+      category,
+      coordinates, // added coordinates field
+    } = req.body;
+
+    const userId = req.userId; // from middleware
+    const userRole = req.userRole; // from middleware
 
     const comingImg = req.files;
-    // console.log(comingImg);
 
-    if (comingImg.length === 0) {
+    if (!comingImg || comingImg.length === 0) {
       return res.status(400).json({
         msg: "At least one image is required",
         success: false,
@@ -24,7 +114,7 @@ export const createPartyPalaceController = async (req, res) => {
 
     if (userRole !== "admin") {
       return res.status(401).json({
-        msg: "only admin can create party palace",
+        msg: "Only admin can create a party palace",
         success: false,
         error: true,
       });
@@ -45,18 +135,48 @@ export const createPartyPalaceController = async (req, res) => {
       });
     }
 
+    // ✅ Parse coordinates (same logic as CameraMan)
+    if (!coordinates) {
+      return res.status(400).json({
+        msg: "Coordinates are required",
+        success: false,
+        error: true,
+      });
+    }
+
+    let parsedCoordinates;
+    try {
+      parsedCoordinates = JSON.parse(coordinates);
+    } catch (err) {
+      return res.status(400).json({
+        msg: "Invalid coordinates format. Must be a JSON array [lng, lat]",
+        success: false,
+        error: true,
+      });
+    }
+
+    if (!Array.isArray(parsedCoordinates) || parsedCoordinates.length !== 2) {
+      return res.status(400).json({
+        msg: "Coordinates should be an array of length 2 (longitude, latitude)",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ Upload images
     const uploadRes = await Promise.all(
       comingImg.map((f) => uploadImageCloudinary(f))
     );
 
     const imageUrls = uploadRes.map((f) => f.url);
 
+    // ✅ Handle categories array
     let categoriesArray = category;
+    if (typeof categoriesArray === "string") {
+      categoriesArray = JSON.parse(categoriesArray);
+    }
 
-if (typeof categoriesArray === "string") {
-  categoriesArray = JSON.parse(categoriesArray);
-}
-
+    // ✅ Create party palace
     const createPartyPalace = new PartyPalace({
       name,
       description,
@@ -66,14 +186,19 @@ if (typeof categoriesArray === "string") {
       category: categoriesArray,
       createdBy: userId,
       images: imageUrls,
+      baseLocation: {
+        type: "Point",
+        coordinates: parsedCoordinates,
+      },
     });
+
     await createPartyPalace.save();
 
-    //socket logic for real time update
+    // ✅ Real-time event (if socket.io is integrated)
     io.emit("createdPartyPalace", createPartyPalace);
 
     return res.status(200).json({
-      msg: "party palace created successfully",
+      msg: "Party palace created successfully",
       data: createPartyPalace,
       success: true,
       error: false,
@@ -86,6 +211,7 @@ if (typeof categoriesArray === "string") {
     });
   }
 };
+
 
 //update unavailable dates controller
 export const updateUnavailableDatesController = async (req, res) => {

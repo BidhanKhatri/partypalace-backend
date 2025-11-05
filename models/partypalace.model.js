@@ -11,6 +11,17 @@ const partyPalaceSchema = new mongoose.Schema(
     unavailableDates: [{ type: Date }],
     images: [{ type: String }],
     likes: { type: Number, default: 0 },
+    baseLocation: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number],
+        required: true,
+      },
+    },
     likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
