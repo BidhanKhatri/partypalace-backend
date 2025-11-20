@@ -10,8 +10,8 @@ import {
 const userRouter = Router();
 
 const limitAuth = rateLimit({
-  bucketSize: 1,
-  refillRate: 1 / 60,
+  bucketSize: 2,
+  refillRate: 2 / 60,
 });
 
 userRouter.post("/signup", limitAuth, signupController);
