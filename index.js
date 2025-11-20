@@ -23,6 +23,9 @@ const allowedOrigins = [
   "https://partypalace.vercel.app",
 ];
 
+// Trust first proxy (if behind a proxy like Nginx)
+app.set("trust proxy", 1);
+
 // Middleware
 app.use(express.json());
 app.use("/images", express.static("public/images"));

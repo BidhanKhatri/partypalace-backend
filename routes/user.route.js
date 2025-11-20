@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { rateLimit } from "../middlewares/ratelimiter.middleware.js";
 import {
   loginController,
   loginGoogleController,
@@ -8,8 +9,13 @@ import {
 
 const userRouter = Router();
 
-userRouter.post("/signup", signupController);
-userRouter.post("/login", loginController);
+const limitAuth = rateLimit({
+  bucketSize: 1,
+  refillRate: 1 / 60,
+});
+
+userRouter.post("/signup", limitAuth, signupController);
+userRouter.post("/login", limitAuth, loginController);
 userRouter.get("/login/google", loginGoogleController);
 userRouter.get("/logout", logoutController);
 
