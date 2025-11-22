@@ -1,4 +1,5 @@
 import CategoryModel from "../models/category.model.js";
+import PartyPalace from "../models/partypalace.model.js";
 
 //controller to create category
 export const createCategory = async (req, res) => {
@@ -46,6 +47,26 @@ export const createCategory = async (req, res) => {
       success: true,
       error: false,
       data: createCategory,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      msg: error.message || error.msg || "Internal server error",
+      success: false,
+      error: true,
+    });
+  }
+};
+
+//controller to get all categories
+export const getCategory = async (req, res) => {
+  try {
+    const categories = await CategoryModel.find().sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      msg: "categories fetched successfully",
+      success: true,
+      error: false,
+      data: categories,
     });
   } catch (error) {
     return res.status(500).json({
@@ -161,3 +182,90 @@ export const deleteCategory = async (req, res) => {
   }
 };
 
+// Controller to get all PartyPalaces (superadmin)
+export const getAllPartyPalaceForSuperAdmin = async (req, res) => {
+  try {
+    const userRole = req.userRole;
+
+    if (userRole !== "superadmin") {
+      return res.status(401).json({
+        msg: "only superadmin can access this",
+        success: false,
+        error: true,
+      });
+    }
+
+    const partyPalaces = await PartyPalace.find()
+      .sort({ createdAt: -1 })
+      .populate("createdBy");
+
+    return res.status(200).json({
+      msg: "party palaces fetched successfully",
+      success: true,
+      error: false,
+      data: partyPalaces,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      msg: error.message || error.msg || "Internal server error",
+      success: false,
+      error: true,
+    });
+  }
+};
+
+// Controller to verify a PartyPalace (superadmin)
+export const verifyPartyPalace = async (req, res) => {
+  try {
+    const { id } = req.body; // party palace id
+    const userRole = req.userRole;
+
+    if (userRole !== "superadmin") {
+      return res.status(401).json({
+        msg: "only superadmin can verify party palace",
+        success: false,
+        error: true,
+      });
+    }
+
+    if (!id) {
+      return res.status(400).json({
+        msg: "party palace id is required",
+        success: false,
+        error: true,
+      });
+    }
+
+    // Fetch current verification status
+    const palace = await PartyPalace.findById(id);
+
+    if (!palace) {
+      return res.status(404).json({
+        msg: "party palace not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // Toggle the verification
+    const newVerifiedState = !palace.verified;
+
+    palace.verified = newVerifiedState;
+    await palace.save();
+
+    return res.status(200).json({
+      msg: `party palace is now ${
+        newVerifiedState ? "verified" : "unverified"
+      }`,
+      success: true,
+      error: false,
+      data: palace,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      msg: error.message || "Internal server error",
+      success: false,
+      error: true,
+    });
+  }
+};

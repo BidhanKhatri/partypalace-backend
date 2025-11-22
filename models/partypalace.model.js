@@ -24,6 +24,7 @@ const partyPalaceSchema = new mongoose.Schema(
     },
     likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    verified: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

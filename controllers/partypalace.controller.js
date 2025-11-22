@@ -4,89 +4,6 @@ import uploadImageCloudinary from "../utils/uploadImageCloud.js";
 import { io } from "../utils/socketConn.js";
 
 //create a party palace controller
-// export const createPartyPalaceController = async (req, res) => {
-//   try {
-//     const { name, description, location, capacity, pricePerHour, category } =
-//       req.body;
-//     const userId = req.userId; // middleware bata lini
-//     const userRole = req.userRole; // middleware bata lini
-
-//     const comingImg = req.files;
-//     // console.log(comingImg);
-
-//     if (comingImg.length === 0) {
-//       return res.status(400).json({
-//         msg: "At least one image is required",
-//         success: false,
-//         error: true,
-//       });
-//     }
-
-//     if (userRole !== "admin") {
-//       return res.status(401).json({
-//         msg: "only admin can create party palace",
-//         success: false,
-//         error: true,
-//       });
-//     }
-
-//     if (
-//       !name ||
-//       !description ||
-//       !location ||
-//       !capacity ||
-//       !pricePerHour ||
-//       !category
-//     ) {
-//       return res.status(400).json({
-//         msg: "All fields are required",
-//         success: false,
-//         error: true,
-//       });
-//     }
-
-//     const uploadRes = await Promise.all(
-//       comingImg.map((f) => uploadImageCloudinary(f))
-//     );
-
-//     const imageUrls = uploadRes.map((f) => f.url);
-
-//     let categoriesArray = category;
-
-// if (typeof categoriesArray === "string") {
-//   categoriesArray = JSON.parse(categoriesArray);
-// }
-
-//     const createPartyPalace = new PartyPalace({
-//       name,
-//       description,
-//       location,
-//       capacity,
-//       pricePerHour,
-//       category: categoriesArray,
-//       createdBy: userId,
-//       images: imageUrls,
-//     });
-//     await createPartyPalace.save();
-
-//     //socket logic for real time update
-//     io.emit("createdPartyPalace", createPartyPalace);
-
-//     return res.status(200).json({
-//       msg: "party palace created successfully",
-//       data: createPartyPalace,
-//       success: true,
-//       error: false,
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       msg: error.message || error.msg || "Internal server error",
-//       success: false,
-//       error: true,
-//     });
-//   }
-// };
-
 export const createPartyPalaceController = async (req, res) => {
   try {
     const {
@@ -211,7 +128,6 @@ export const createPartyPalaceController = async (req, res) => {
     });
   }
 };
-
 
 //update unavailable dates controller
 export const updateUnavailableDatesController = async (req, res) => {
@@ -385,14 +301,17 @@ export const removeUnavailableDatesController = async (req, res) => {
 export const getAllPartyPalace = async (req, res) => {
   try {
     let { search, page, limit } = req.query;
-    // console.log(search);
 
     if (!page) page = 1;
     if (!limit) limit = 6;
 
     const skip = (page - 1) * limit;
 
-    const query = { ...(search ? { $text: { $search: search } } : {}) };
+    // Include verified: true in query
+    const query = {
+      verified: true,
+      ...(search ? { $text: { $search: search } } : {}),
+    };
 
     const [data, total] = await Promise.all([
       PartyPalace.find(query)
@@ -402,6 +321,7 @@ export const getAllPartyPalace = async (req, res) => {
         .populate("createdBy"),
       PartyPalace.countDocuments(query),
     ]);
+
     return res.status(200).json({
       msg: "party palace found successfully",
       data,
@@ -607,12 +527,12 @@ export const getPartyPalaceByCategory = async (req, res) => {
 
     let skip = (page - 1) * limit;
 
+    // Include verified: true in the query
+    const query = { category, verified: true };
+
     const [findPartyPalace, totalCount] = await Promise.all([
-      PartyPalace.find({ category })
-        .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 }),
-      PartyPalace.countDocuments({ category }),
+      PartyPalace.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }),
+      PartyPalace.countDocuments(query),
     ]);
 
     if (findPartyPalace.length === 0) {
@@ -651,7 +571,7 @@ export const getPartyPalaceByFilter = async (req, res) => {
     let skip = (page - 1) * limit;
 
     // Build dynamic query
-    let query = {};
+    let query = { verified: true }; // Only include verified party palaces
 
     if (min !== undefined && max !== undefined) {
       query.pricePerHour = { $gte: min, $lte: max };
@@ -676,7 +596,7 @@ export const getPartyPalaceByFilter = async (req, res) => {
 
     if (findPP.length === 0) {
       return res.status(400).json({
-        msg: "No party found in this price range",
+        msg: "No party palace found with the given filters",
         success: false,
         error: true,
       });
@@ -702,7 +622,8 @@ export const getPartyPalaceByFilter = async (req, res) => {
 //get top liked party palace controller
 export const getTopLikedPartyPalace = async (_, res) => {
   try {
-    const query = { likes: { $gte: 5 } };
+    // Only include verified party palaces with likes >= 5
+    const query = { likes: { $gte: 5 }, verified: true };
 
     const findTopLikedPartyPalace = await PartyPalace.find(query)
       .sort({ createdAt: -1 })
@@ -753,6 +674,7 @@ export const getPartyPalaceByCategoryAndAvailableDates = async (req, res) => {
     const query = {
       category,
       unavailableDates: { $ne: targetedDate },
+      verified: true, // Only include verified party palaces
     };
 
     const [data, totalCount] = await Promise.all([

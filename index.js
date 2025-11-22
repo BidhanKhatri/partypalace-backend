@@ -14,6 +14,8 @@ import globalRouter from "./routes/global.route.js";
 import { app, server } from "./utils/socketConn.js";
 import reviewRouter from "./routes/review.route.js";
 import cameraManRouter from "./routes/cameraman.route.js";
+import khaltiRouter from "./routes/khalti.route.js";
+import dashboardRouter from "./routes/dashboard.route.js";
 
 dotenv.config();
 
@@ -51,6 +53,7 @@ app.use(
 // Routes
 app.use("/api/user", userRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/admin", dashboardRouter);
 app.use("/api/partypalace", partyPalaceRouter);
 app.use("/api/booking", bookingRouter);
 app.use("/api/message", messageRouter);
@@ -58,7 +61,9 @@ app.use("/api/ai", aiRouter);
 app.use("/api/superadmin", superAdminRouter);
 app.use("/api/global", globalRouter);
 app.use("/api/review", reviewRouter);
-app.use("/api/cameraman", cameraManRouter);
+app.use("/api/khalti", khaltiRouter);
+
+// app.use("/api/cameraman", cameraManRouter);
 
 // Start server
 const PORT = process.env.PORT || 4444;
