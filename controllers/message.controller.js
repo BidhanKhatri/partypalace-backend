@@ -145,6 +145,53 @@ export const getMessage = async (req, res) => {
   }
 };
 
+//get left side message for user
+export const getLeftSideMessageForUser = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const userRole = req?.userRole;
+
+    if (userRole !== "user") {
+      return res.status(401).json({
+        msg: "only user can access this route",
+        success: false,
+        error: true,
+      });
+    }
+
+    const formattedUserId = new mongoose.Types.ObjectId(userId);
+
+    const messages = await MessageModel.find({
+      $or: [{ senderId: formattedUserId }, { receiverId: formattedUserId }],
+    })
+      .sort({ createdAt: -1 })
+      .populate("senderId", "username email profilePic")
+      .populate("receiverId", "username email profilePic")
+      .populate({
+        path: "partyPalaceId",
+        select: "name location images createdBy",
+        populate: {
+          path: "createdBy",
+          select: "username email profilePic",
+        },
+      })
+      .select("-image");
+
+    return res.status(200).json({
+      msg: "User conversations found successfully",
+      success: true,
+      error: false,
+      data: messages,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      msg: error.message || "Internal server error",
+      success: false,
+      error: true,
+    });
+  }
+};
+
 //get left side message for admin
 export const getLeftSideMessageForAdmin = async (req, res) => {
   try {

@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import { verifyToken } from "../utils/jwt.js";
 
 export const authMiddleware = async (req, res, next) => {
   try {
@@ -13,7 +13,7 @@ export const authMiddleware = async (req, res, next) => {
       });
     }
 
-    const decode = jwt.verify(token, process.env.JWT_SECRET);
+    const decode = verifyToken(token, process.env.JWT_SECRET);
     // console.log(decode);
 
     if (!decode) {

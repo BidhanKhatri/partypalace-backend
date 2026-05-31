@@ -16,14 +16,9 @@ import reviewRouter from "./routes/review.route.js";
 import cameraManRouter from "./routes/cameraman.route.js";
 import khaltiRouter from "./routes/khalti.route.js";
 import dashboardRouter from "./routes/dashboard.route.js";
+import { corsOptions } from "./config/cors.js";
 
 dotenv.config();
-
-// Allowed origins for CORS
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://partypalace.vercel.app",
-];
 
 // Trust first proxy (if behind a proxy like Nginx)
 app.set("trust proxy", 1);
@@ -34,21 +29,7 @@ app.use("/images", express.static("public/images"));
 app.use(cookieParser());
 
 // Dynamic CORS setup
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // allow requests with no origin (like mobile apps or curl)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg = `CORS policy: origin ${origin} not allowed`;
-        return callback(new Error(msg), false);
-      }
-      return callback(null, true);
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  })
-);
+app.use(cors(corsOptions));
 
 // Routes
 app.use("/api/user", userRouter);

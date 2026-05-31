@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import {
   getLeftSideMessageForAdmin,
+  getLeftSideMessageForUser,
   getMessage,
   sendMyMessage,
 } from "../controllers/message.controller.js";
@@ -14,6 +15,11 @@ messageRouter.get(
   "/getLeftMessagesAdmin",
   authMiddleware,
   getLeftSideMessageForAdmin
+);
+messageRouter.get(
+  "/getLeftMessagesUser",
+  authMiddleware,
+  getLeftSideMessageForUser
 );
 
 export default messageRouter;

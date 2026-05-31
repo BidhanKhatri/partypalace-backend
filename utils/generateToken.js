@@ -1,7 +1,7 @@
-import jwt from "jsonwebtoken";
+import { signToken } from "./jwt.js";
 
 const generateToken = (id, role) => {
-  const token = jwt.sign({ id, role }, process.env.JWT_SECRET, {
+  const token = signToken({ id, role }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import PartyPalace from "../models/partypalace.model.js";
+import Booking from "../models/booking.model.js";
 import uploadImageCloudinary from "../utils/uploadImageCloud.js";
 import { io } from "../utils/socketConn.js";
 
@@ -669,12 +670,31 @@ export const getPartyPalaceByCategoryAndAvailableDates = async (req, res) => {
       });
     }
 
+    page = Number(page);
+    limit = Number(limit);
     let skip = (page - 1) * limit;
+
+    const selectedDate = new Date(targetedDate);
+    const nextDate = new Date(selectedDate);
+    nextDate.setDate(selectedDate.getDate() + 1);
+
+    const bookedPartyPalaceIds = await Booking.distinct("partyPalace", {
+      bookingDate: targetedDate,
+      status: { $ne: "cancelled" },
+    });
 
     const query = {
       category,
-      unavailableDates: { $ne: targetedDate },
-      verified: true, // Only include verified party palaces
+      _id: { $nin: bookedPartyPalaceIds },
+      unavailableDates: {
+        $not: {
+          $elemMatch: {
+            $gte: selectedDate,
+            $lt: nextDate,
+          },
+        },
+      },
+      verified: true,
     };
 
     const [data, totalCount] = await Promise.all([
@@ -687,16 +707,11 @@ export const getPartyPalaceByCategoryAndAvailableDates = async (req, res) => {
       PartyPalace.countDocuments(query),
     ]);
 
-    if (data.length === 0) {
-      return res.status(400).json({
-        msg: "party palace not found",
-        success: false,
-        error: true,
-      });
-    }
-
     return res.status(200).json({
-      msg: "party palace found successfully",
+      msg:
+        data.length > 0
+          ? "party palace found successfully"
+          : "No party palace is available for the selected date",
       success: true,
       error: false,
       data,

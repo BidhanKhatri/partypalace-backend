@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import {
   changeBookingStatus,
+  getAdminBookingsController,
   getBookingDetailsControllerAdmin,
 } from "../controllers/admin.controller.js";
 import { getAllPartyPalaceCreatedByAdmin } from "../controllers/partypalace.controller.js";
@@ -13,6 +14,7 @@ adminRouter.get(
   authMiddleware,
   getBookingDetailsControllerAdmin
 );
+adminRouter.get("/bookings", authMiddleware, getAdminBookingsController);
 adminRouter.post(
   "/get-my-partypalace",
   authMiddleware,

@@ -1,7 +1,12 @@
 import { Router } from "express";
-import { khaltiController } from "../controllers/khalti.controller.js";
+import {
+  initiateKhaltiPaymentController,
+  lookupKhaltiPaymentController,
+} from "../controllers/khalti.controller.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 const khaltiRouter = Router();
 
-khaltiRouter.post("/verify", khaltiController);
+khaltiRouter.post("/initiate", authMiddleware, initiateKhaltiPaymentController);
+khaltiRouter.post("/lookup", authMiddleware, lookupKhaltiPaymentController);
 
 export default khaltiRouter;

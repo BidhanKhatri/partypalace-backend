@@ -58,6 +58,57 @@ export const getBookingDetailsControllerAdmin = async (req, res) => {
   }
 };
 
+//get all active booking details for palaces owned by admin
+export const getAdminBookingsController = async (req, res) => {
+  try {
+    const userRole = req?.userRole;
+    const userId = req?.userId;
+    const { date, status } = req.query;
+
+    if (userRole !== "admin") {
+      return res.status(401).json({
+        msg: "only admin can get booking details",
+        success: false,
+        error: true,
+      });
+    }
+
+    const adminPalaces = await PartyPalace.find({ createdBy: userId }).select(
+      "_id"
+    );
+    const palaceIds = adminPalaces.map((palace) => palace._id);
+
+    const query = {
+      partyPalace: { $in: palaceIds },
+    };
+
+    if (date) query.bookingDate = date;
+    if (status && status !== "all") {
+      query.status = status;
+    } else {
+      query.status = { $ne: "cancelled" };
+    }
+
+    const bookings = await Booking.find(query)
+      .sort({ bookingDate: 1, createdAt: -1 })
+      .populate("user", "username email profilePic phone")
+      .populate("partyPalace", "name location images capacity pricePerHour");
+
+    return res.status(200).json({
+      msg: "Admin bookings found",
+      success: true,
+      error: false,
+      data: bookings,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      msg: error.message || error || "Internal server error",
+      success: false,
+      error: true,
+    });
+  }
+};
+
 //change booking status (admin)
 export const changeBookingStatus = async (req, res) => {
   try {
